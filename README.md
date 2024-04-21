@@ -5,6 +5,8 @@ This is my first iteration! Right now, it just plays a sine wave melody or a key
 To use the sine melody set the `use_sample` parameter to `True` and reinstall (and vice versa to go back to the keyboard click)
 ```python
 def on_stroked(self, stroke, use_sample=False):
+# Change use_sample to True
+def on_stroked(self, stroke, use_sample=True):
 ```
 
 ## Installation
