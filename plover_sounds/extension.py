@@ -58,7 +58,9 @@ class PlaySounds:
         self.engine.hook_disconnect("stroked", self.on_stroked)
 
     def on_stroked(self, stroke):
-            twinkle_notes = ["C4", "C4", "G4", "G4", "A4", "A4",
+        if not self.engine.output:
+            return
+        twinkle_notes = ["C4", "C4", "G4", "G4", "A4", "A4",
                              "G4", "F4", "F4", "E4", "E4", "D4",
                              "D4", "C4", "G4", "G4", "F4", "F4",
                              "E4", "E4", "D4", "G4", "G4", "F4",
@@ -66,27 +68,27 @@ class PlaySounds:
                              "G4", "G4", "A4", "A4", "G4", "F4",
                              "F4", "E4", "E4", "D4", "D4", "C4"]
 
-            frequency = self.note_names[twinkle_notes[self.current_note_index]]
+        frequency = self.note_names[twinkle_notes[self.current_note_index]]
 
-            duration_ms = 1000
-            volume = 0.3  # (0.0 to 1.0)
-            sound = self.generate_sine_wave(frequency, duration_ms, volume)
+        duration_ms = 1000
+        volume = 0.3  # (0.0 to 1.0)
+        sound = self.generate_sine_wave(frequency, duration_ms, volume)
 
+        channel = pygame.mixer.find_channel()
+
+        # If no available channel found, stop the oldest one
+        if channel is None:
+            oldest_channel = self.active_channels.pop(0)
+            oldest_channel.stop()
             channel = pygame.mixer.find_channel()
 
-            # If no available channel found, stop the oldest one
-            if channel is None:
-                oldest_channel = self.active_channels.pop(0)
-                oldest_channel.stop()
-                channel = pygame.mixer.find_channel()
+        channel.play(sound)
 
-            channel.play(sound)
+        self.active_channels.append(channel)
 
-            self.active_channels.append(channel)
-
-            self.current_note_index += 1
-            if self.current_note_index >= len(twinkle_notes):
-                self.current_note_index = 0
+        self.current_note_index += 1
+        if self.current_note_index >= len(twinkle_notes):
+            self.current_note_index = 0
 
     def generate_sine_wave(self, frequency, duration_ms, volume):
         sample_rate = 44100
