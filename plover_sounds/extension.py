@@ -1,12 +1,17 @@
 import numpy as np
 import pygame
 import random
+from plover.resource import resource_exists, resource_filename
 
 class PlaySounds:
     def __init__(self, engine):
         self.engine = engine
         self.current_note_index = 0
         self.sounds = []
+        sample_path = "asset:plover_sounds:keyboard-click.mp3"
+        if not resource_exists(sample_path):
+            raise Exception("Couldn't find audio sample file")
+        self.sample = resource_filename(sample_path)
         self.active_channels = []
         pygame.mixer.init()
 
@@ -57,19 +62,25 @@ class PlaySounds:
     def stop(self):
         self.engine.hook_disconnect("stroked", self.on_stroked)
 
-    def on_stroked(self, stroke):
+    def on_stroked(self, stroke, use_sample=True):
         if not self.engine.output:
             return
+
+        if use_sample:
+            self.play_sample()
+        else:
+            self.play_sine_wave()
+
+    def play_sine_wave(self):
         twinkle_notes = ["C4", "C4", "G4", "G4", "A4", "A4",
-                             "G4", "F4", "F4", "E4", "E4", "D4",
-                             "D4", "C4", "G4", "G4", "F4", "F4",
-                             "E4", "E4", "D4", "G4", "G4", "F4",
-                             "F4", "E4", "E4", "D4", "C4", "C4",
-                             "G4", "G4", "A4", "A4", "G4", "F4",
-                             "F4", "E4", "E4", "D4", "D4", "C4"]
+                         "G4", "F4", "F4", "E4", "E4", "D4",
+                         "D4", "C4", "G4", "G4", "F4", "F4",
+                         "E4", "E4", "D4", "G4", "G4", "F4",
+                         "F4", "E4", "E4", "D4", "C4", "C4",
+                         "G4", "G4", "A4", "A4", "G4", "F4",
+                         "F4", "E4", "E4", "D4", "D4", "C4"]
 
         frequency = self.note_names[twinkle_notes[self.current_note_index]]
-
         duration_ms = 1000
         volume = 0.3  # (0.0 to 1.0)
         sound = self.generate_sine_wave(frequency, duration_ms, volume)
@@ -83,7 +94,6 @@ class PlaySounds:
             channel = pygame.mixer.find_channel()
 
         channel.play(sound)
-
         self.active_channels.append(channel)
 
         self.current_note_index += 1
@@ -126,3 +136,18 @@ class PlaySounds:
 
         return sound
 
+    def play_sample(self):
+        # Load the sample
+        sample = pygame.mixer.Sound(self.sample)
+
+        # Play the sample
+        channel = pygame.mixer.find_channel()
+
+        # If no available channel found, stop the oldest one
+        if channel is None:
+            oldest_channel = self.active_channels.pop(0)
+            oldest_channel.stop()
+            channel = pygame.mixer.find_channel()
+
+        channel.play(sample)
+        self.active_channels.append(channel)
