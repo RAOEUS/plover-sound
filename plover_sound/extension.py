@@ -6,7 +6,7 @@ from plover.resource import resource_exists, resource_filename
 mode = "mapped"
 
 # sample mode settings
-sample_path = "asset:plover_sounds:keyboard-click.mp3"
+sample_path = "asset:plover_sound:keyboard-click.mp3"
 
 # melody mode settings
 # these are the notes of the melody to be played in order
