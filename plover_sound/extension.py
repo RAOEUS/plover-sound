@@ -33,10 +33,10 @@ else:
 
 class PlaySounds:
     def __init__(self, engine):
+        self.engine = engine
         self.config_file_path = os.path.join(CONFIG_DIR, "plover_sound_conf.py")
         self.set_initial_values()
         self.delay_ms = delay_ms
-        self.engine = engine
         self.current_note_index = 0
         self.sounds = []
         if not resource_exists(self.sample_path):
