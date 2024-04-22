@@ -23,10 +23,10 @@ melody_notes = [
 # mapped mode settings
 # map individual keys to specific notes
 note_map = {
-    '#': 'C3', 'S-': 'D3', 'T-': 'E3', 'K-': 'F3', 'P-': 'G3', 'W-': 'A3', 'H-': 'B3',
-    'R-': 'C4', 'A-': 'D4', 'O-': 'E4', '*': 'F4', '-E': 'G4', '-U': 'A4', '-F': 'B4',
-    '-R': 'C5', '-P': 'D5', '-B': 'E5', '-L': 'F5', '-G': 'G5', '-T': 'A5', '-S': 'B5', '-D': 'C6',
-    '-Z': 'D6',
+    '#': 'F1', 'S-': 'C2', 'T-': 'G#2', 'K-': 'A#2', 'P-': 'D#3', 'W-': 'G3', 'H-': 'G#3',
+    'R-': 'F2', 'A-': 'C3', 'O-': 'G#3', '*': 'A#3', '-E': 'D#4', '-U': 'G4', '-F': 'G#4',
+    '-R': 'F3', '-P': 'C4', '-B': 'G#4', '-L': 'A#4', '-G': 'D#5', '-T': 'G5', '-S': 'G#5', '-D': 'F4',
+    '-Z': 'C5',
 }
 delay_ms = 40 #delay between notes played
 
