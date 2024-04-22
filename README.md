@@ -1,21 +1,9 @@
 # Plover Sound
 
-This is my first iteration! Right now, it just plays a sine wave melody or a keyboard click sound with each stroke.
-
-To use the sine melody set the `use_sample` parameter to `True` and reinstall (and vice versa to go back to the keyboard click)
-```python
-def on_stroked(self, stroke, use_sample=False):
-# Change use_sample to True
-def on_stroked(self, stroke, use_sample=True):
-```
+Very early in development, but it's coming along nicely! Let me know in the plover discord if you have any suggestions: **@ricecakes808**
 
 ## Installation
 
-You have to install manually from the command line.
+There are 3 modes you can use, `sample`, `mapped`, and `melody`. Set your preferred mode at the top of the file, adjust settings as needed and then install!
 
-See the instructions [here](https://plover.wiki/index.php/Plugins).
-
-For Windows:
-
-```
-.\plover_console.exe -s plover_plugins install git+https://github.com/RAOEUS/plover-sounds.git
+You have to git clone and then install manually from the command line. See the instructions [here](https://plover.wiki/index.php/Plugins).
