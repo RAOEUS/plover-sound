@@ -1,16 +1,12 @@
+import os
+import ast
 import numpy as np
 import pygame
 from plover.resource import resource_exists, resource_filename
+from plover.oslayer.config import CONFIG_DIR
 
-# Set your mode here (sample, melody, mapped)
-mode = "mapped"
-
-# sample mode settings
-sample_path = "asset:plover_sound:keyboard-click.mp3"
-
-# melody mode settings
-# these are the notes of the melody to be played in order
-melody_notes = [
+default_mode = "mapped"
+default_melody_notes = [
     "C4", "C4", "G4", "G4", "A4", "A4",
     "G4", "F4", "F4", "E4", "E4", "D4",
     "D4", "C4", "G4", "G4", "F4", "F4",
@@ -20,26 +16,29 @@ melody_notes = [
     "F4", "E4", "E4", "D4", "D4", "C4"
 ]
 
-# mapped mode settings
-# map individual keys to specific notes
-note_map = {
+default_note_map = {
     '#': 'F1', 'S-': 'C2', 'T-': 'G#2', 'K-': 'A#2', 'P-': 'D#3', 'W-': 'G3', 'H-': 'G#3',
     'R-': 'F2', 'A-': 'C3', 'O-': 'G#3', '*': 'A#3', '-E': 'D#4', '-U': 'G4', '-F': 'G#4',
     '-R': 'F3', '-P': 'C4', '-B': 'G#4', '-L': 'A#4', '-G': 'D#5', '-T': 'G5', '-S': 'G#5', '-D': 'F4',
     '-Z': 'C5',
 }
-delay_ms = 40 #delay between notes played
+delay_ms = 40
+
+default_sample_path = "asset:plover_sound:keyboard-click.mp3"
+if not resource_exists(default_sample_path):
+    raise Exception("Couldn't find default audio sample file")
+else:
+   default_sample_path = resource_filename(default_sample_path)
+
 
 class PlaySounds:
     def __init__(self, engine):
-        self.mode = mode
-        self.melody_notes = melody_notes
-        self.note_map = note_map
+        self.config_file_path = os.path.join(CONFIG_DIR, "plover_sound_conf.py")
+        self.set_initial_values()
         self.delay_ms = delay_ms
         self.engine = engine
         self.current_note_index = 0
         self.sounds = []
-        self.sample_path = sample_path
         if not resource_exists(self.sample_path):
             raise Exception("Couldn't find audio sample file")
         self.sample = resource_filename(self.sample_path)
@@ -59,6 +58,35 @@ class PlaySounds:
         # Handle overlapping notes
         pygame.mixer.set_num_channels(23)
 
+    def set_initial_values(self):
+        config_dict = self.load_config()
+        # Set radio button
+        self.mode = config_dict['mode']
+        self.melody_notes = config_dict['melody_notes']
+        self.note_map = config_dict['note_map']
+        self.sample_path = config_dict['sample_path']
+
+    def load_config(self):
+        # Check if configuration file exists
+        try:
+            with open(self.config_file_path, 'r') as config_file:
+                config_content = config_file.read()
+                config_dict = ast.literal_eval(config_content)
+        except FileNotFoundError:
+            # Configuration file doesn't exist, create with default values
+            config_dict = {
+                'mode': default_mode,
+                'melody_notes': default_melody_notes,
+                'note_map': default_note_map,
+                'sample_path': default_sample_path
+            }
+            with open(self.config_file_path, 'w') as config_file:
+                config_file.write(str(config_dict))
+
+        except SyntaxError:
+            raise Exception("Error in config syntax")
+            return
+        return config_dict
 
     def generate_note_names(self):
         # Notes on the piano

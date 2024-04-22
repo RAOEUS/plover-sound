@@ -1,0 +1,4 @@
+exclude plover_sound/tool/*_rc.py
+exclude plover_sound/tool/*_ui.py
+include plover_sound/tool/*.ui
+recursive-include plover_sound/tool/resources *
