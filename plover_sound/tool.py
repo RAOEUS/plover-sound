@@ -14,8 +14,8 @@ from plover.oslayer.config import CONFIG_DIR
 import ast
 
 class PloverSoundConfig(Tool):
-    TITLE = 'Plover Sound'
-    ICON = ''
+    TITLE = 'Sound'
+    ICON = 'asset:plover_sound:icon.svg'
     ROLE = 'plover_sound'
 
     def __init__(self, engine):
