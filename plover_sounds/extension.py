@@ -1,17 +1,48 @@
 import numpy as np
 import pygame
-import random
 from plover.resource import resource_exists, resource_filename
+
+# Set your mode here (sample, melody, mapped)
+mode = "mapped"
+
+# sample mode settings
+sample_path = "asset:plover_sounds:keyboard-click.mp3"
+
+# melody mode settings
+# these are the notes of the melody to be played in order
+melody_notes = [
+    "C4", "C4", "G4", "G4", "A4", "A4",
+    "G4", "F4", "F4", "E4", "E4", "D4",
+    "D4", "C4", "G4", "G4", "F4", "F4",
+    "E4", "E4", "D4", "G4", "G4", "F4",
+    "F4", "E4", "E4", "D4", "C4", "C4",
+    "G4", "G4", "A4", "A4", "G4", "F4",
+    "F4", "E4", "E4", "D4", "D4", "C4"
+]
+
+# mapped mode settings
+# map individual keys to specific notes
+note_map = {
+    '#': 'C3', 'S-': 'D3', 'T-': 'E3', 'K-': 'F3', 'P-': 'G3', 'W-': 'A3', 'H-': 'B3',
+    'R-': 'C4', 'A-': 'D4', 'O-': 'E4', '*': 'F4', '-E': 'G4', '-U': 'A4', '-F': 'B4',
+    '-R': 'C5', '-P': 'D5', '-B': 'E5', '-L': 'F5', '-G': 'G5', '-T': 'A5', '-S': 'B5', '-D': 'C6',
+    '-Z': 'D6',
+}
+delay_ms = 40 #delay between notes played
 
 class PlaySounds:
     def __init__(self, engine):
+        self.mode = mode
+        self.melody_notes = melody_notes
+        self.note_map = note_map
+        self.delay_ms = delay_ms
         self.engine = engine
         self.current_note_index = 0
         self.sounds = []
-        sample_path = "asset:plover_sounds:keyboard-click.mp3"
-        if not resource_exists(sample_path):
+        self.sample_path = sample_path
+        if not resource_exists(self.sample_path):
             raise Exception("Couldn't find audio sample file")
-        self.sample = resource_filename(sample_path)
+        self.sample = resource_filename(self.sample_path)
         self.active_channels = []
         pygame.mixer.init()
 
@@ -26,7 +57,7 @@ class PlaySounds:
         self.note_names = self.generate_note_names()
 
         # Handle overlapping notes
-        pygame.mixer.set_num_channels(10)
+        pygame.mixer.set_num_channels(23)
 
 
     def generate_note_names(self):
@@ -62,26 +93,47 @@ class PlaySounds:
     def stop(self):
         self.engine.hook_disconnect("stroked", self.on_stroked)
 
-    def on_stroked(self, stroke, use_sample=True):
+    def on_stroked(self, stroke):
         if not self.engine.output:
             return
 
-        if use_sample:
+        if self.mode == "sample":
             self.play_sample()
+        elif self.mode == "melody":
+            self.play_melody()
+        elif self.mode == "mapped":
+            self.play_mapped(stroke)
         else:
-            self.play_sine_wave()
+            pass
 
-    def play_sine_wave(self):
-        twinkle_notes = ["C4", "C4", "G4", "G4", "A4", "A4",
-                         "G4", "F4", "F4", "E4", "E4", "D4",
-                         "D4", "C4", "G4", "G4", "F4", "F4",
-                         "E4", "E4", "D4", "G4", "G4", "F4",
-                         "F4", "E4", "E4", "D4", "C4", "C4",
-                         "G4", "G4", "A4", "A4", "G4", "F4",
-                         "F4", "E4", "E4", "D4", "D4", "C4"]
+    def play_mapped(self, stroke):
+        # Example of strokes: ['H-', '-E', '-U']
 
-        frequency = self.note_names[twinkle_notes[self.current_note_index]]
-        duration_ms = 1000
+        # Get frequencies for each stroke
+        frequencies = [self.note_names[self.note_map[i]] for i in stroke]
+
+        # Generate sine waves for each frequency
+        sounds = [self.generate_sine_wave(frequency, duration_ms=500, volume=0.3) for frequency in frequencies]
+
+        # Play each sound on a separate channel with a delay between notes
+        for sound in sounds:
+            channel = pygame.mixer.find_channel()
+
+            # If no available channel found, stop the oldest one
+            if channel is None:
+                oldest_channel = self.active_channels.pop(0)
+                oldest_channel.stop()
+                channel = pygame.mixer.find_channel()
+
+            channel.play(sound)
+            self.active_channels.append(channel)
+
+            # Apply the delay between notes
+            pygame.time.delay(self.delay_ms)
+
+    def play_melody(self):
+        frequency = self.note_names[self.melody_notes[self.current_note_index]]
+        duration_ms = 2000
         volume = 0.3  # (0.0 to 1.0)
         sound = self.generate_sine_wave(frequency, duration_ms, volume)
 
@@ -97,8 +149,10 @@ class PlaySounds:
         self.active_channels.append(channel)
 
         self.current_note_index += 1
-        if self.current_note_index >= len(twinkle_notes):
+        if self.current_note_index >= len(self.melody_notes):
             self.current_note_index = 0
+
+        sample_rate = 44100
 
     def generate_sine_wave(self, frequency, duration_ms, volume):
         sample_rate = 44100
@@ -108,18 +162,26 @@ class PlaySounds:
 
         fade_in_duration = 0.0  # Fade-in duration in seconds
         fade_in_samples = int(sample_rate * fade_in_duration)
-        fade_in = np.linspace(0, 1, fade_in_samples)
+        fade_in = np.linspace(0, 1, fade_in_samples, endpoint=False)
 
-        fade_out_duration = 0.5  # Fade-out duration in seconds
+        fade_out_duration = 1.0  # Fade-out duration in seconds
         fade_out_samples = int(sample_rate * fade_out_duration)
-        fade_out = np.linspace(1, 0, fade_out_samples)
+
+        # Ensure that the fade-out does not exceed half of the total duration
+        fade_out_samples = min(fade_out_samples, num_samples // 2)
+
+        # Calculate the starting index for the fade-out
+        fade_out_start_index = num_samples - fade_out_samples
+
+        # Create fade-out array starting from the calculated index
+        fade_out = np.linspace(1, 0, fade_out_samples, endpoint=False)
 
         sine_wave = np.sin(2 * np.pi * frequency * time)
 
         sine_wave[:fade_in_samples] *= fade_in
 
-        # Apply the fade-out envelope
-        sine_wave[-fade_out_samples:] *= fade_out
+        # Apply the fade-out envelope starting from the calculated index
+        sine_wave[fade_out_start_index:] *= fade_out
 
         # Scale the sine wave to the range [-1, 1] and adjust the volume
         amplitude = 10 ** (-10 / 20)  # Convert -10 dB to amplitude
